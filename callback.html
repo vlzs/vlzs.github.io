@@ -6,22 +6,19 @@
     <title>Spotify Auth Callback</title>
 </head>
 <body>
-    <h1>Spotify Authentication Successful</h1>
+    <h1>Authenticating...</h1>
     <script>
-        // URLからアクセストークンを抽出
-        const hash = window.location.hash.substring(1).split('&').reduce(function (initial, item) {
-            if (item) {
-                var parts = item.split('=');
-                initial[parts[0]] = decodeURIComponent(parts[1]);
-            }
-            return initial;
+        // URLからアクセストークンを取得する
+        const hash = window.location.hash.substring(1).split('&').reduce((acc, item) => {
+            let parts = item.split('=');
+            acc[parts[0]] = decodeURIComponent(parts[1]);
+            return acc;
         }, {});
 
-        // トークンをセッションストレージに保存
-        window.location.hash = '';
+        // アクセストークンをローカルストレージに保存
         if (hash.access_token) {
-            window.localStorage.setItem('spotifyAccessToken', hash.access_token);
-            window.location.href = '/';  // トークン取得後にメインページへリダイレクト
+            localStorage.setItem('spotifyAccessToken', hash.access_token);
+            window.location.href = '/';  // トークンを取得後、メインページにリダイレクト
         } else {
             console.error('Access token not found');
         }
