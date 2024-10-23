@@ -8,6 +8,7 @@
 <body>
     <h1>Get Spotify Playlist Tracks</h1>
     <button id="loginButton">Login with Spotify</button>
+    <div id="playlist"></div>
 
     <script>
         const clientId = '38cc289eb54b4db8b013fb30b2be2aad';  // Spotify Developer Dashboardで取得
@@ -21,41 +22,7 @@
         document.getElementById('loginButton').addEventListener('click', () => {
             window.location.href = authUrl;
         });
-    </script>
-    <h1>Spotify Playlist Tracks</h1>
-    <div id="playlist"></div>
 
-    <script>
-        // ローカルストレージからアクセストークンを取得
-        const token = localStorage.getItem('spotifyAccessToken');
-
-        if (token) {
-            // Spotify Web APIリクエスト
-            fetch('https://api.spotify.com/v1/playlists/{playlist_id}/tracks', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);  // プレイリスト内のトラック情報をコンソールに出力
-
-                const playlistDiv = document.getElementById('playlist');
-                data.items.forEach(track => {
-                    const trackElement = document.createElement('p');
-                    trackElement.textContent = `${track.track.name} - ${track.track.external_urls.spotify}`;
-                    playlistDiv.appendChild(trackElement);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching playlist:', error);
-            });
-        } else {
-            console.error('Access token is missing');
-        }
-    </script>
-        <h1>Fetch Spotify Playlist Tracks</h1>
-    <script>
         // URLからアクセストークンを取得する関数
         function getAccessToken() {
             const hash = window.location.hash;
@@ -66,31 +33,39 @@
         // アクセストークンを取得
         const accessToken = getAccessToken();
 
-        async function fetchPlaylistTracks(playlistId) {
-            const token = accessToken; // 取得したアクセストークンを使用
-            const response = await fetch(`https://api.spotify.com/v1/playlists/4IAehFj7FFm2YD4q1qrUma/tracks`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+        // アクセストークンが取得できた場合、ローカルストレージに保存
+        if (accessToken) {
+            localStorage.setItem('spotifyAccessToken', accessToken);
+            window.location.href = '/';  // メインページにリダイレクト
+        } else {
+            // ローカルストレージからアクセストークンを取得
+            const token = localStorage.getItem('spotifyAccessToken');
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            if (token) {
+                // Spotify Web APIリクエスト
+                fetch('https://api.spotify.com/v1/playlists/4IAehFj7FFm2YD4q1qrUma/tracks', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);  // プレイリスト内のトラック情報をコンソールに出力
+
+                    const playlistDiv = document.getElementById('playlist');
+                    data.items.forEach(track => {
+                        const trackElement = document.createElement('p');
+                        trackElement.textContent = `${track.track.name} - ${track.track.external_urls.spotify}`;
+                        playlistDiv.appendChild(trackElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching playlist:', error);
+                });
+            } else {
+                console.error('Access token is missing');
             }
-
-            const data = await response.json();
-            return data.items; // トラック情報を返す
         }
-
-        // 使用例
-        fetchPlaylistTracks('3LfjCfj2JU9VrLhQFvleOh').then(tracks => {
-            tracks.forEach(track => {
-                console.log(track.track.external_urls.spotify); // トラックのURLを出力
-            });
-        }).catch(error => {
-            console.error('Error fetching tracks:', error);
-        });
     </script>
 </body>
 </html>
