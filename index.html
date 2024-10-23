@@ -6,41 +6,21 @@
     <title>Spotify Playlist Fetcher</title>
 </head>
 <body>
-    <h1>Spotify Playlist Fetcher</h1>
+    <h1>Get Spotify Playlist Tracks</h1>
     <button id="loginButton">Login with Spotify</button>
-    <div id="playlists"></div>
 
     <script>
-        const clientId = 'あなたのクライアントID'; 
-        const redirectUri = 'https://vlzs.github.io/callback'; 
-        const scopes = 'playlist-read-private playlist-read-collaborative';
+        const clientId = 'あなたのクライアントID';  // Spotify Developer Dashboardで取得
+        const redirectUri = 'https://vlzs.github.io/callback';  // 認証後にリダイレクトするURI
+        const scopes = 'playlist-read-private playlist-read-collaborative';  // 必要な権限
 
-        document.getElementById('loginButton').addEventListener('click', function () {
-            const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+        // 認証用のURL生成
+        const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+
+        // ボタンをクリックしたときに認証ページへリダイレクト
+        document.getElementById('loginButton').addEventListener('click', () => {
             window.location.href = authUrl;
         });
-
-        // ローカルストレージからアクセストークンを取得
-        const token = localStorage.getItem('spotifyAccessToken');
-        if (token) {
-            fetch('https://api.spotify.com/v1/me/playlists', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const playlistsDiv = document.getElementById('playlists');
-                data.items.forEach(playlist => {
-                    const p = document.createElement('p');
-                    p.textContent = playlist.name + ' - ' + playlist.external_urls.spotify;
-                    playlistsDiv.appendChild(p);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching playlists:', error);
-            });
-        }
     </script>
 </body>
 </html>
