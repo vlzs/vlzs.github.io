@@ -3,21 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Web API Example</title>
+    <title>Spotify Playlist Fetcher</title>
 </head>
 <body>
     <h1>Spotify Playlist Fetcher</h1>
     <button id="loginButton">Login with Spotify</button>
+    <div id="playlists"></div>
 
     <script>
-        const clientId = 'あなたのクライアントID'; // Spotify Developer Dashboardから取得
-        const redirectUri = 'https://vlzs.github.io/callback'; // SpotifyアプリのリダイレクトURI
-        const scopes = 'playlist-read-private playlist-read-collaborative'; // 必要なスコープを設定
+        const clientId = 'あなたのクライアントID'; 
+        const redirectUri = 'https://vlzs.github.io/callback'; 
+        const scopes = 'playlist-read-private playlist-read-collaborative';
 
         document.getElementById('loginButton').addEventListener('click', function () {
             const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
             window.location.href = authUrl;
         });
+
+        // ローカルストレージからアクセストークンを取得
+        const token = localStorage.getItem('spotifyAccessToken');
+        if (token) {
+            fetch('https://api.spotify.com/v1/me/playlists', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const playlistsDiv = document.getElementById('playlists');
+                data.items.forEach(playlist => {
+                    const p = document.createElement('p');
+                    p.textContent = playlist.name + ' - ' + playlist.external_urls.spotify;
+                    playlistsDiv.appendChild(p);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching playlists:', error);
+            });
+        }
     </script>
 </body>
 </html>
