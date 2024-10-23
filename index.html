@@ -22,5 +22,37 @@
             window.location.href = authUrl;
         });
     </script>
+    <h1>Spotify Playlist Tracks</h1>
+    <div id="playlist"></div>
+
+    <script>
+        // ローカルストレージからアクセストークンを取得
+        const token = localStorage.getItem('spotifyAccessToken');
+
+        if (token) {
+            // Spotify Web APIリクエスト
+            fetch('https://api.spotify.com/v1/playlists/{playlist_id}/tracks', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);  // プレイリスト内のトラック情報をコンソールに出力
+
+                const playlistDiv = document.getElementById('playlist');
+                data.items.forEach(track => {
+                    const trackElement = document.createElement('p');
+                    trackElement.textContent = `${track.track.name} - ${track.track.external_urls.spotify}`;
+                    playlistDiv.appendChild(trackElement);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching playlist:', error);
+            });
+        } else {
+            console.error('Access token is missing');
+        }
+    </script>
 </body>
 </html>
