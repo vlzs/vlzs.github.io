@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Playlist Fetcher</title>
+    <title>Spotify Playlist or Album Fetcher</title>
 </head>
 <body>
-    <h1>Get Spotify Playlist Tracks</h1>
+    <h1>Get Spotify Playlist or Album Tracks</h1>
     <button id="loginButton">Login with Spotify</button>
+    <input type="text" id="urlInput" placeholder="Enter Spotify Playlist/Album URL">
+    <button id="fetchButton">Fetch Tracks</button>
     <div id="playlist"></div>
 
     <script>
@@ -18,7 +20,7 @@
         // 認証用のURL生成
         const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
 
-        // ボタンをクリックしたときに認証ページへリダイレクト
+        // 認証ボタンをクリックしたときに認証ページへリダイレクト
         document.getElementById('loginButton').addEventListener('click', () => {
             window.location.href = authUrl;
         });
@@ -30,40 +32,53 @@
             return params.get('access_token');
         }
 
-        // アクセストークンを取得
+        // アクセストークンを取得し、ローカルストレージに保存
         const accessToken = getAccessToken();
-
-        // アクセストークンが取得できた場合、ローカルストレージに保存
         if (accessToken) {
             localStorage.setItem('spotifyAccessToken', accessToken);
             window.location.href = '/';  // メインページにリダイレクト
-        } else {
-            // ローカルストレージからアクセストークンを取得
-            const token = localStorage.getItem('spotifyAccessToken');
+        }
 
-            if (token) {
-                // Spotify Web APIリクエスト
-                fetch('https://api.spotify.com/v1/playlists/4IAehFj7FFm2YD4q1qrUma/tracks', {
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log(data);  // プレイリスト内のトラック情報をコンソールに出力
+        // fetchButtonのクリックイベント
+        document.getElementById('fetchButton').addEventListener('click', () => {
+            const urlInput = document.getElementById('urlInput').value;
+            const playlistId = extractSpotifyId(urlInput);
 
-                    const playlistDiv = document.getElementById('playlist');
-                    data.items.forEach(track => {
-                        const trackElement = document.createElement('p');
-                        trackElement.textContent = `${track.track.name} - ${track.track.external_urls.spotify}`;
-                        playlistDiv.appendChild(trackElement);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching playlist:', error);
-                });
+            if (playlistId) {
+                fetchPlaylistTracks(playlistId);
             } else {
-                console.error('Access token is missing');
+                alert('Invalid Spotify URL. Please enter a valid playlist or album URL.');
+            }
+        });
+
+        // SpotifyのURLからIDを抽出する関数
+        function extractSpotifyId(url) {
+            const match = url.match(/(?:playlist|album)\/([a-zA-Z0-9]+)(?:\?|$)/);
+            return match ? match[1] : null;
+        }
+
+        // プレイリストやアルバムのトラック情報を取得する関数
+        async function fetchPlaylistTracks(playlistId) {
+            const token = localStorage.getItem('spotifyAccessToken'); // ローカルストレージからトークンを取得
+
+            try {
+                const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch tracks.');
+
+                const data = await response.json();
+                const playlistDiv = document.getElementById('playlist');
+                playlistDiv.innerHTML = '';  // 前の結果をクリア
+
+                data.items.forEach(track => {
+                    const trackElement = document.createElement('p');
+                    trackElement.textContent = `${track.track.name} - ${track.track.artists.map(artist => artist.name).join(', ')}`;
+                    playlistDiv.appendChild(trackElement);
+                });
+            } catch (error) {
+                console.error('Error fetching tracks:', error);
             }
         }
     </script>
