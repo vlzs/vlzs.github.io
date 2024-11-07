@@ -51,12 +51,34 @@
         if (!token) {
             alert("Please log in to Spotify.");
         }
-
+        //トークン確認用の関数
+        function checkTokenValidity(token) {
+        // トークンが有効かどうか簡単に確認するために、Spotifyの現在のユーザーデータを取得
+            fetch('https://api.spotify.com/v1/me', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Token is valid');
+                } else {
+                    console.log('Token is invalid or expired');
+                    localStorage.removeItem('spotifyAccessToken');
+                    alert("Your session has expired. Please log in again.");
+                }
+            })
+            .catch(error => console.error('Error checking token validity:', error));
+        }
         // fetchButtonのクリックイベント
         document.getElementById('fetchButton').addEventListener('click', () => {
+            if (!token) {
+                alert("Please log in to Spotify.");
+                return;
+            }
+            checkTokenValidity(token);
+        
             const urlInput = document.getElementById('urlInput').value;
             const spotifyData = extractSpotifyTypeAndId(urlInput);
-
+        
             if (spotifyData) {
                 if (spotifyData.type === 'playlist') {
                     fetchPlaylistTracks(spotifyData.id);
