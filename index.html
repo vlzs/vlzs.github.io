@@ -14,36 +14,53 @@
 
     <script>
         const clientId = '38cc289eb54b4db8b013fb30b2be2aad';  // Spotify Developer Dashboardで取得
-        const redirectUri = 'https://vlzs.github.io/callback';  // 認証後にリダイレクトするURI
+        const redirectUri = window.location.origin + window.location.pathname;  // 同じページにリダイレクト
         const scopes = 'playlist-read-private playlist-read-collaborative';  // 必要な権限
 
         // 認証用のURL生成
         const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
 
-        // 認証ボタンをクリックしたときに認証ページへリダイレクト
+        // ボタンをクリックしたときに認証ページへリダイレクト
         document.getElementById('loginButton').addEventListener('click', () => {
             window.location.href = authUrl;
         });
 
-        // ローカルストレージからトークンを取得
-        const token = localStorage.getItem('spotifyAccessToken');
-
-        if (!token) {
-            // トークンがない場合は認証を促す
-            alert("Please log in to Spotify.");
-        } else {
-            // fetchButtonのクリックイベント
-            document.getElementById('fetchButton').addEventListener('click', () => {
-                const urlInput = document.getElementById('urlInput').value;
-                const playlistId = extractSpotifyId(urlInput);
-
-                if (playlistId) {
-                    fetchPlaylistTracks(playlistId);
-                } else {
-                    alert('Invalid Spotify URL. Please enter a valid playlist or album URL.');
-                }
-            });
+        // URLからアクセストークンを取得する関数
+        function getAccessToken() {
+            const hash = window.location.hash;
+            if (hash) {
+                const params = new URLSearchParams(hash.substring(1));
+                return params.get('access_token');
+            }
+            return null;
         }
+
+        // アクセストークンを取得して保存
+        let token = localStorage.getItem('spotifyAccessToken') || getAccessToken();
+        if (token) {
+            localStorage.setItem('spotifyAccessToken', token);
+            // URLのハッシュ部分を削除して見た目をリセット
+            if (window.location.hash) {
+                window.location.hash = '';
+            }
+        }
+
+        // トークンがない場合、認証を促す
+        if (!token) {
+            alert("Please log in to Spotify.");
+        }
+
+        // fetchButtonのクリックイベント
+        document.getElementById('fetchButton').addEventListener('click', () => {
+            const urlInput = document.getElementById('urlInput').value;
+            const playlistId = extractSpotifyId(urlInput);
+
+            if (playlistId) {
+                fetchPlaylistTracks(playlistId);
+            } else {
+                alert('Invalid Spotify URL. Please enter a valid playlist or album URL.');
+            }
+        });
 
         // SpotifyのURLからIDを抽出する関数
         function extractSpotifyId(url) {
