@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotify Playlist or Album Fetcher</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* パネルカードのスタイル */
+        .track-card {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .track-card:hover {
+            background-color: #e0e0e0;
+        }
+
+        .track-card p {
+            margin: 0;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
     <h1>Get Spotify Playlist or Album Tracks</h1>
@@ -18,9 +40,8 @@
         const redirectUri = 'https://vlzs.github.io/';  // 同じページにリダイレクト
         const scopes = 'playlist-read-private playlist-read-collaborative';  // 必要な権限
 
-        // 認証用のURL生成
         const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
-
+        
         // ボタンをクリックしたときに認証ページへリダイレクト
         document.getElementById('loginButton').addEventListener('click', () => {
             window.location.href = authUrl;
@@ -36,49 +57,29 @@
             return null;
         }
 
-        // アクセストークンを取得して保存
         let token = localStorage.getItem('spotifyAccessToken') || getAccessToken();
         if (token) {
             localStorage.setItem('spotifyAccessToken', token);
-            // URLのハッシュ部分を削除して見た目をリセット
             if (window.location.hash) {
                 window.location.hash = '';
             }
             console.log("Token exists.");
         }
 
-        // トークンがない場合、認証を促す
         if (!token) {
             alert("Please log in to Spotify.");
         }
-        //トークン確認用の関数
-        function checkTokenValidity(token) {
-        // トークンが有効かどうか簡単に確認するために、Spotifyの現在のユーザーデータを取得
-            fetch('https://api.spotify.com/v1/me', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Token is valid');
-                } else {
-                    console.log('Token is invalid or expired');
-                    localStorage.removeItem('spotifyAccessToken');
-                    alert("Your session has expired. Please log in again.");
-                }
-            })
-            .catch(error => console.error('Error checking token validity:', error));
-        }
+
         // fetchButtonのクリックイベント
         document.getElementById('fetchButton').addEventListener('click', () => {
             if (!token) {
                 alert("Please log in to Spotify.");
                 return;
             }
-            checkTokenValidity(token);
-        
+
             const urlInput = document.getElementById('urlInput').value;
             const spotifyData = extractSpotifyTypeAndId(urlInput);
-        
+
             if (spotifyData) {
                 if (spotifyData.type === 'playlist') {
                     fetchPlaylistTracks(spotifyData.id);
@@ -119,8 +120,17 @@
                 playlistDiv.innerHTML = '';  // 前の結果をクリア
 
                 data.items.forEach(track => {
-                    const trackElement = document.createElement('p');
-                    trackElement.textContent = `${track.track.name} - ${track.track.artists.map(artist => artist.name).join(', ')}`;
+                    const trackElement = document.createElement('div');
+                    trackElement.classList.add('track-card');
+                    trackElement.dataset.url = track.track.external_urls.spotify;
+                    trackElement.innerHTML = `<p>${track.track.name} - ${track.track.artists.map(artist => artist.name).join(', ')}</p>`;
+
+                    // クリックイベントでURLをコピー
+                    trackElement.addEventListener('click', () => {
+                        const url = trackElement.dataset.url;
+                        copyToClipboard(url);
+                    });
+
                     playlistDiv.appendChild(trackElement);
                 });
             } catch (error) {
@@ -142,13 +152,33 @@
                 playlistDiv.innerHTML = '';  // 前の結果をクリア
 
                 data.items.forEach(track => {
-                    const trackElement = document.createElement('p');
-                    trackElement.textContent = `${track.name} - ${track.artists.map(artist => artist.name).join(', ')}`;
+                    const trackElement = document.createElement('div');
+                    trackElement.classList.add('track-card');
+                    trackElement.dataset.url = track.external_urls.spotify;
+                    trackElement.innerHTML = `<p>${track.name} - ${track.artists.map(artist => artist.name).join(', ')}</p>`;
+
+                    // クリックイベントでURLをコピー
+                    trackElement.addEventListener('click', () => {
+                        const url = trackElement.dataset.url;
+                        copyToClipboard(url);
+                    });
+
                     playlistDiv.appendChild(trackElement);
                 });
             } catch (error) {
                 console.error('Error fetching tracks:', error);
             }
+        }
+
+        // クリップボードにURLをコピーする関数
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('Track URL copied to clipboard!');
         }
     </script>
 </body>
